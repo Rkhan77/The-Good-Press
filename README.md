@@ -6,7 +6,7 @@ The Good Press is a phone-first news reader that combines the familiar swipe int
 
 ## Live demo
 
-[Try The Good Press on GitHub Pages](https://rkhan77.github.io/good-press-demo/)
+[Try The Good Press on GitHub Pages](https://rkhan77.github.io/The-Good-Press/)
 
 ## Features
 

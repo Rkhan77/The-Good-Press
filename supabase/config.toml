@@ -1,0 +1,42 @@
+# Local Supabase configuration for The Good Press.
+# Supabase GitHub integration discovers migrations from this directory.
+project_id = "the-good-press"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000", "https://rkhan77.github.io/The-Good-Press/"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[studio]
+enabled = true
+port = 54323
+
+[analytics]
+enabled = false

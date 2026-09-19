@@ -32,31 +32,6 @@ The Good Press is a phone-first news reader that combines the familiar swipe int
 - Preferences adapt continuously instead of forcing users through a setup questionnaire.
 - Decisions, reading count and topic preferences persist between visits on the same device.
 
-### Local AI through n8n
-
-The built-in **Newsroom** settings panel can connect to a local n8n webhook. This allows article selection and summarisation to stay inside a workflow you control.
-
-The webhook should return either a JSON array or an object with an `articles` array:
-
-```json
-{
-  "articles": [
-    {
-      "title": "A River Returns to the Heart of the City",
-      "dek": "A once-buried waterway is flowing in daylight again.",
-      "summary": "A concise AI-generated summary of the article.",
-      "category": "Planet",
-      "source": "Local Newsroom",
-      "minutes": 2
-    }
-  ]
-}
-```
-
-Required fields are `title`, `summary` and `category`. The app uses sensible defaults for optional fields.
-
-> When connecting from a browser, configure the n8n webhook to allow requests from the app's origin. A hosted HTTPS page may not be permitted to call an insecure `http://localhost` endpoint, so local testing or an HTTPS tunnel may be required.
-
 ### Responsive and accessible
 
 - Designed around a one-handed mobile experience.

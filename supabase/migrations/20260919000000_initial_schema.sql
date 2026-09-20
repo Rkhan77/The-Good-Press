@@ -5,6 +5,8 @@ create type public.article_status as enum ('draft', 'published', 'archived');
 create type public.swipe_direction as enum ('left', 'right');
 
 
+
+
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text check (char_length(display_name) between 1 and 80),
@@ -13,6 +15,8 @@ create table public.profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+
 
 
 create table if not exists public.articles (
@@ -30,9 +34,15 @@ alter table public.articles
   add column if not exists status public.article_status not null default 'draft',
   add column if not exists metadata jsonb not null default '{}'::jsonb,
   add column if not exists updated_at timestamptz not null default now();
+
+alter table public.articles
+  alter column published_at type timestamptz
+  using case
+    when published_at is null or btrim(published_at::text) = '' then null
+    else published_at::text::timestamptz
+  end;
+
 update public.articles set
   title = coalesce(title, 'Imported good-news article'),
   ai_summary = coalesce(ai_summary, 'Summary pending'),
   source_name = coalesce(source_name, 'Imported source'),
-  category = coalesce(category, 'Good news'),
-  published_at = coalesce(published_at, now());

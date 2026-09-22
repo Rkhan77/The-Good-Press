@@ -89,6 +89,16 @@ The demo is a dependency-free static web app built with semantic HTML, responsiv
 
 Download the repository and open `index.html` in a browser, or serve the folder with any local static server.
 
+## Connect Supabase
+
+1. Open Supabase and select the project.
+2. Open **Connect** and copy the project URL and **publishable** key.
+3. Open `supabase-config.js`.
+4. Paste those two values into `supabaseUrl` and `supabasePublishableKey`.
+5. Reload the app and open Settings. The account badge changes from **Demo** to **Connected**.
+
+The browser configuration is public by design. Never put a Supabase secret key or legacy `service_role` key in this repository.
+
 ## Project status
 
 This is a working product prototype. It demonstrates the complete reading and preference-learning experience while leaving article sourcing, production recommendation logic and the n8n workflow under the owner's control.

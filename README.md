@@ -2,7 +2,7 @@
 
 **Good news, shaped by you.**
 
-The Good Press is a phone-first news reader with the familiar swipe interaction of a dating app and the visual character of a printed newspaper.
+The Good Press is a phone-first news reader with the familiar swipe interaction and the visual character of a printed newspaper.
 
 [Try The Good Press](https://rkhan77.github.io/The-Good-Press/)
 

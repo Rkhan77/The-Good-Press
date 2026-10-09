@@ -2,7 +2,7 @@ import Stripe from 'npm:stripe@^22';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': 'https://goodpress.au', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
-const stripe = new Stripe(Deno.env.get('') ?? '');
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '');
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 Deno.serve(async (request) => {

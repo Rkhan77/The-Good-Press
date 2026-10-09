@@ -1,13 +1,13 @@
 import Stripe from 'npm:stripe@^22';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const stripe = new Stripe(Deno.env.get('') ?? '');
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '');
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
   const signature = request.headers.get('stripe-signature');
-  const secret = Deno.env.get('');
+  const secret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
   if (!signature || !secret) return new Response('Missing Stripe signature', { status: 400 });
 
   let event: Stripe.Event;

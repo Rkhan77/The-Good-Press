@@ -40,3 +40,7 @@ port = 54323
 
 [analytics]
 enabled = false
+
+# Stripe signs webhook payloads itself, so this endpoint verifies Stripe's signature.
+[functions.stripe-webhook]
+verify_jwt = false

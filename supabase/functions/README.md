@@ -4,7 +4,7 @@ The Good Press has a $5/month Unlimited plan. The browser never receives a Strip
 
 ## 1. Create the Stripe product
 
-Create an **Unlimited cards** product in Stripe with a recurring monthly price of **5.00 in your chosen billing currency**. Copy its price ID (starts with `price_`).
+Create an **Unlimited cards** product in Stripe with a recurring monthly price of **AUD 5.00**. Copy its price ID (starts with `price_`).
 
 ## 2. Deploy the database migration
 

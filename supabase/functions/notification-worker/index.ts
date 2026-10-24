@@ -14,10 +14,19 @@ async function retry(admin: ReturnType<typeof adminClient>, job: Job, message: s
   await admin.from('notification_outbox').update({ status: failed ? 'failed' : 'pending', scheduled_for: new Date(Date.now() + delayMinutes * 60000).toISOString(), last_error: message.slice(0, 500) }).eq('id', job.id);
 }
 
+async function requireWorkerRequest(request: Request) {
+  const cronSecret = request.headers.get('X-Worker-Secret') ?? '';
+  if (cronSecret) {
+    const { data, error } = await adminClient().rpc('authorize_notification_worker', { p_secret: cronSecret });
+    if (!error && data === true) return;
+  }
+  await requireServiceRequest(request);
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   try {
-    await requireServiceRequest(request);
+    await requireWorkerRequest(request);
     if (Deno.env.get('NOTIFICATIONS_LIVE') !== 'true') return json({ enabled: false, processed: 0 });
     const admin = adminClient();
     const { appUrl, projectUrl } = environment();

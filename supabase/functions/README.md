@@ -67,7 +67,9 @@ The test sends one private message and does not contact readers. Confirm that th
 
 ## 4. Connect the article workflow
 
-After n8n successfully inserts a batch of published articles, make one POST request to:
+New articles are now connected automatically. When n8n inserts an article with `status = 'published'`, Supabase adds it to a ten-minute digest for every reader who opted into new-article emails. Articles inserted together are combined into one email, so n8n does not need another HTTP node.
+
+For a manual or recovery batch, make one POST request to:
 
 `https://ltdzjanqhxrleqbtkpoo.supabase.co/functions/v1/queue-notifications`
 
@@ -81,4 +83,4 @@ The queue is idempotent: submitting the same batch twice does not produce duplic
 
 ## 5. Schedule the worker and go live
 
-Call `notification-worker` every five minutes from Supabase Cron or n8n using the service-role headers. Once the private test succeeds, set `NOTIFICATIONS_LIVE=true`. The worker rechecks consent before every send, provides a one-click unsubscribe link, retries temporary failures, and records the outcome.
+`20261025000000_automate_email_notifications.sql` schedules `notification-worker` every five minutes using a private key generated inside Supabase Vault. Once the private test succeeds, set `NOTIFICATIONS_LIVE=true`. The worker rechecks consent before every send, provides a one-click unsubscribe link, retries temporary failures, and records the outcome.

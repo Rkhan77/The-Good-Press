@@ -44,3 +44,17 @@ enabled = false
 # Stripe signs webhook payloads itself, so this endpoint verifies Stripe's signature.
 [functions.stripe-webhook]
 verify_jwt = false
+
+# These server-to-server functions verify the service-role key themselves.
+[functions.queue-notifications]
+verify_jwt = false
+
+[functions.notification-worker]
+verify_jwt = false
+
+[functions.send-email-test]
+verify_jwt = false
+
+# Public bearer link; the unguessable per-reader token authorizes only opt-out.
+[functions.unsubscribe]
+verify_jwt = false

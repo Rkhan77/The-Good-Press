@@ -12,7 +12,7 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [db.migrations]
 enabled = true
@@ -24,8 +24,8 @@ sql_paths = ["./seed.sql"]
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000", "https://rkhan77.github.io/The-Good-Press/"]
+site_url = "https://goodpress.au"
+additional_redirect_urls = ["https://goodpress.au", "https://goodpress.au/**", "https://rkhan77.github.io/good-press-demo/", "https://rkhan77.github.io/The-Good-Press/**", "http://localhost:3000/**", "http://127.0.0.1:3000/**", "http://127.0.0.1:4173/**"]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -33,6 +33,10 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+
+[auth.hook.send_email]
+enabled = true
+uri = "pg-functions://postgres/public/send_auth_email_hook"
 
 [studio]
 enabled = true

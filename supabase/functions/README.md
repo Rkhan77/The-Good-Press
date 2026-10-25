@@ -41,6 +41,10 @@ The notification system sends from the licensed Microsoft 365 mailbox `readit@go
 
 Every newly created account receives one immediate service welcome email. This is independent of the optional new-article and card-refresh preferences and is protected by a per-user idempotency key, so retries cannot send a second welcome message.
 
+## Authentication emails through Microsoft 365
+
+`send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through Microsoft Graph from `readit@goodpress.au` within one minute. This avoids Exchange Online's retired password-based SMTP authentication and does not require another shared secret.
+
 ## 1. Deploy the schema
 
 Deploy `supabase/migrations/20261024000000_email_notifications.sql`. It adds reader preferences, a protected delivery queue, delivery records, unsubscribe tokens, and the 24-hour card-refresh queue hook.

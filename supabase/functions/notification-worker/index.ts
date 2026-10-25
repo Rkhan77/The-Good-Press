@@ -69,7 +69,7 @@ Deno.serve(async (request) => {
         if (job.kind === 'auth') {
           const action = job.payload?.action ?? 'magiclink';
           const message = authMessages[action] ?? authMessages.magiclink;
-          const html = authEmailFrame(message.preheader, message.heading, message.copy, message.button, authVerificationUrl(projectUrl, job.payload, appUrl), job.payload?.token);
+          const html = authEmailFrame(message.preheader, message.heading, message.copy, message.button, authVerificationUrl(projectUrl, job.payload, appUrl));
           await sendMail(recipient, message.subject, html);
         } else if (job.kind === 'welcome') {
           if (!preference) throw new Error('Notification preference record is missing');

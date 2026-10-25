@@ -39,6 +39,8 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 The notification system sends from the licensed Microsoft 365 mailbox `readit@goodpress.au`. Readers start opted out and must enable either notification in Settings.
 
+Every newly created account receives one immediate service welcome email. This is independent of the optional new-article and card-refresh preferences and is protected by a per-user idempotency key, so retries cannot send a second welcome message.
+
 ## 1. Deploy the schema
 
 Deploy `supabase/migrations/20261024000000_email_notifications.sql`. It adds reader preferences, a protected delivery queue, delivery records, unsubscribe tokens, and the 24-hour card-refresh queue hook.

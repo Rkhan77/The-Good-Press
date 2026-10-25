@@ -1,6 +1,6 @@
 import { adminClient, emailFrame, environment, escapeHtml, json, requireServiceRequest, sendMail } from '../_shared/email.ts';
 
-type Job = { id: number; kind: 'new_articles' | 'card_reset'; user_id: string; payload: { article_ids?: number[] }; attempts: number };
+type Job = { id: number; kind: 'welcome' | 'new_articles' | 'card_reset'; user_id: string; payload: { article_ids?: number[] }; attempts: number };
 
 async function complete(admin: ReturnType<typeof adminClient>, job: Job, status: 'sent' | 'failed' | 'skipped', email: string, detail?: string) {
   const now = new Date().toISOString();
@@ -42,11 +42,21 @@ Deno.serve(async (request) => {
           admin.auth.admin.getUserById(job.user_id),
         ]);
         recipient = authData.user?.email ?? '';
-        const allowed = preference && !preference.unsubscribed_at && (job.kind === 'new_articles' ? preference.new_articles : preference.card_reset);
+        const allowed = preference && !preference.unsubscribed_at && (job.kind === 'welcome' || (job.kind === 'new_articles' ? preference.new_articles : preference.card_reset));
         if (!allowed || !recipient) { await complete(admin, job, 'skipped', recipient, 'Reader is not eligible or opted in'); skipped++; continue; }
 
         const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;
-        if (job.kind === 'card_reset') {
+        if (job.kind === 'welcome') {
+          const html = emailFrame(
+            'Your good-news edition is ready.',
+            'Welcome to the brighter side of the news.',
+            '<p>Thanks for joining The Good Press, where useful progress gets the front page and the news does not pick a fight with your mood.</p><p>Choose the locations and topics you care about, then support the stories you want to see more of. Your personal edition will learn what matters to you—quietly, helpfully, and without shouting across the newsroom.</p><p><strong>See you at the newsstand,<br>The GP Team</strong></p>',
+            'Build your Good Edition',
+            appUrl,
+            unsubscribeUrl,
+          );
+          await sendMail(recipient, 'Welcome to The Good Press', html);
+        } else if (job.kind === 'card_reset') {
           const since = new Date(Date.now() - 86400000).toISOString();
           const { count } = await admin.from('article_reads').select('article_id', { count: 'exact', head: true }).eq('user_id', job.user_id).gte('created_at', since);
           if ((count ?? 0) >= 25) { await retry(admin, job, 'Card allowance has not reset yet'); continue; }

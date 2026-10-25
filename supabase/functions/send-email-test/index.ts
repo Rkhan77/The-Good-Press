@@ -10,7 +10,7 @@ Deno.serve(async (request) => {
     const html = emailFrame(
       'Your Good Press email connection is ready.',
       'The newsroom found the postbox.',
-      '<p>This is a private delivery test from The Good Press. Microsoft Graph, Supabase and <strong>readit@goodpress.au</strong> are speaking to one another.</p><p>No reader notifications have been enabled.</p>',
+      '<p>This is a private delivery test from The Good Press. Resend, Supabase and <strong>readit@goodpress.au</strong> are speaking to one another.</p><p>No reader notifications have been enabled.</p>',
       'Open The Good Press',
       appUrl,
       `${appUrl}/privacy.html`,

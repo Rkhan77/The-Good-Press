@@ -37,33 +37,28 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 # Consent-based email notifications
 
-The notification system sends from the licensed Microsoft 365 mailbox `readit@goodpress.au`. Readers start opted out and must enable either notification in Settings.
+The notification system sends through Resend using `readit@goodpress.au`. Readers start opted out and must enable either notification in Settings.
 
 Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional new-article and card-refresh preferences and is protected by a per-user idempotency key.
 
-## Authentication emails through Microsoft 365
+## Authentication emails through Resend
 
-`send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through Microsoft Graph from `readit@goodpress.au` within one minute. This avoids Exchange Online's retired password-based SMTP authentication and does not require another shared secret.
-
-### Microsoft 365 delivery troubleshooting
-
-`550 5.7.708 ... AS(7910)` is an Exchange Online outbound reputation restriction, not a Supabase signup error. Microsoft says it is more common for new tenants and must be reviewed by the tenant's email administrator through Microsoft Support. Include the complete NDR, UTC timestamp, sender, recipient, and tenant/domain in the support request. Also check Microsoft Defender's **Restricted users** page and confirm SPF, DKIM, and DMARC for `goodpress.au`.
+`send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through the Resend Email API from `readit@goodpress.au` within one minute.
 
 ## 1. Deploy the schema
 
 Deploy `supabase/migrations/20261024000000_email_notifications.sql`. It adds reader preferences, a protected delivery queue, delivery records, unsubscribe tokens, and the 24-hour card-refresh queue hook.
 
-## 2. Configure Microsoft Graph
+## 2. Configure Resend
 
-The Entra application needs the Microsoft Graph **Application** permission `Mail.Send` with tenant admin consent. Store these Edge Function secrets in Supabase:
+Add and verify `goodpress.au` in Resend first. Add every DNS record Resend provides, wait for the domain status to become **Verified**, then create a sending API key. Store these Edge Function secrets in Supabase:
 
-- `MS_TENANT_ID`
-- `MS_CLIENT_ID`
-- `MS_CLIENT_SECRET`
+- `RESEND_API_KEY`
 - `MAIL_FROM=readit@goodpress.au`
+- `MAIL_FROM_NAME=The Good Press`
 - `APP_URL=https://goodpress.au`
 
-Leave `NOTIFICATIONS_LIVE` unset or set to `false` during testing. Never put any of these values in the website.
+Leave `NOTIFICATIONS_LIVE` unset or set to `false` during initial testing. Never put the Resend API key in the website. The Microsoft 365 mailbox can remain active for receiving replies; Resend handles outbound delivery.
 
 ## 3. Deploy and test the functions
 

@@ -39,11 +39,15 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 The notification system sends from the licensed Microsoft 365 mailbox `readit@goodpress.au`. Readers start opted out and must enable either notification in Settings.
 
-Every newly created account receives one immediate service welcome email. This is independent of the optional new-article and card-refresh preferences and is protected by a per-user idempotency key, so retries cannot send a second welcome message.
+Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional new-article and card-refresh preferences and is protected by a per-user idempotency key.
 
 ## Authentication emails through Microsoft 365
 
 `send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through Microsoft Graph from `readit@goodpress.au` within one minute. This avoids Exchange Online's retired password-based SMTP authentication and does not require another shared secret.
+
+### Microsoft 365 delivery troubleshooting
+
+`550 5.7.708 ... AS(7910)` is an Exchange Online outbound reputation restriction, not a Supabase signup error. Microsoft says it is more common for new tenants and must be reviewed by the tenant's email administrator through Microsoft Support. Include the complete NDR, UTC timestamp, sender, recipient, and tenant/domain in the support request. Also check Microsoft Defender's **Restricted users** page and confirm SPF, DKIM, and DMARC for `goodpress.au`.
 
 ## 1. Deploy the schema
 

@@ -34,6 +34,9 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
 
+[auth.rate_limit]
+email_sent = 30
+
 [auth.hook.send_email]
 enabled = true
 uri = "pg-functions://postgres/public/send_auth_email_hook"

@@ -16,10 +16,11 @@ export function baseEnvironment() {
 export function environment() {
   const { projectUrl, serviceKey, appUrl } = baseEnvironment();
   const resendApiKey = Deno.env.get('RESEND_API_KEY') ?? '';
-  const mailFrom = Deno.env.get('MAIL_FROM') ?? 'readit@goodpress.au';
+  const mailFrom = Deno.env.get('MAIL_FROM') ?? 'no-reply@goodpress.au';
   const mailFromName = Deno.env.get('MAIL_FROM_NAME') ?? 'The Good Press';
+  const mailReplyTo = Deno.env.get('MAIL_REPLY_TO') ?? 'support@goodpress.au';
   if (!resendApiKey) throw new Error('Resend email service is not configured');
-  return { projectUrl, serviceKey, resendApiKey, mailFrom, mailFromName, appUrl };
+  return { projectUrl, serviceKey, resendApiKey, mailFrom, mailFromName, mailReplyTo, appUrl };
 }
 
 export function adminClient() {
@@ -42,14 +43,14 @@ export async function requireServiceRequest(request: Request) {
 }
 
 export async function sendMail(to: string, subject: string, html: string) {
-  const { resendApiKey, mailFrom, mailFromName } = environment();
+  const { resendApiKey, mailFrom, mailFromName, mailReplyTo } = environment();
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       from: `${mailFromName} <${mailFrom}>`,
       to: [to],
-      reply_to: mailFrom,
+      reply_to: mailReplyTo,
       subject,
       html,
     }),
@@ -65,10 +66,10 @@ export const escapeHtml = (value: unknown) => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
 export function emailFrame(preheader: string, heading: string, copy: string, buttonLabel: string, buttonUrl: string, unsubscribeUrl: string) {
-  return `<!doctype html><html><body style="margin:0;background:#ded8c9;color:#1d1d1b;font-family:Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ded8c9;padding:24px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#f4eddd;border:1px solid #1d1d1b"><tr><td style="padding:30px"><div style="font:700 11px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;border-bottom:3px double #1d1d1b;padding-bottom:14px">The Good Press</div><h1 style="font:900 38px/1 Georgia,serif;letter-spacing:-1px;margin:24px 0 16px">${escapeHtml(heading)}</h1><div style="font:17px/1.55 Georgia,serif">${copy}</div><p style="margin:26px 0"><a href="${escapeHtml(buttonUrl)}" style="display:inline-block;background:#1d1d1b;color:#f4eddd;padding:14px 18px;text-decoration:none;font-weight:800">${escapeHtml(buttonLabel)}</a></p><div style="border-top:1px solid #b7b0a1;padding-top:16px;color:#716c63;font-size:11px;line-height:1.5">Sent by The Good Press · <a href="mailto:readit@goodpress.au" style="color:#716c63">readit@goodpress.au</a><br><a href="${escapeHtml(unsubscribeUrl)}" style="color:#716c63">Unsubscribe from Good Press emails</a></div></td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html><body style="margin:0;background:#ded8c9;color:#1d1d1b;font-family:Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ded8c9;padding:24px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#f4eddd;border:1px solid #1d1d1b"><tr><td style="padding:30px"><div style="font:700 11px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;border-bottom:3px double #1d1d1b;padding-bottom:14px">The Good Press</div><h1 style="font:900 38px/1 Georgia,serif;letter-spacing:-1px;margin:24px 0 16px">${escapeHtml(heading)}</h1><div style="font:17px/1.55 Georgia,serif">${copy}</div><p style="margin:26px 0"><a href="${escapeHtml(buttonUrl)}" style="display:inline-block;background:#1d1d1b;color:#f4eddd;padding:14px 18px;text-decoration:none;font-weight:800">${escapeHtml(buttonLabel)}</a></p><div style="border-top:1px solid #b7b0a1;padding-top:16px;color:#716c63;font-size:11px;line-height:1.5">Sent automatically by The Good Press from no-reply@goodpress.au.<br>Need help? <a href="mailto:support@goodpress.au" style="color:#716c63">support@goodpress.au</a> · <a href="${escapeHtml(unsubscribeUrl)}" style="color:#716c63">Unsubscribe</a></div></td></tr></table></td></tr></table></body></html>`;
 }
 
 export function authEmailFrame(preheader: string, heading: string, copy: string, buttonLabel: string, buttonUrl: string) {
-  return `<!doctype html><html><body style="margin:0;background:#ded8c9;color:#1d1d1b;font-family:Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ded8c9;padding:24px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#f4eddd;border:1px solid #1d1d1b"><tr><td style="padding:30px"><div style="font:700 11px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;border-bottom:3px double #1d1d1b;padding-bottom:14px">The Good Press</div><h1 style="font:900 38px/1 Georgia,serif;letter-spacing:-1px;margin:24px 0 16px">${escapeHtml(heading)}</h1><div style="font:17px/1.55 Georgia,serif">${copy}</div><p style="margin:26px 0"><a href="${escapeHtml(buttonUrl)}" style="display:inline-block;background:#1d1d1b;color:#f4eddd;padding:14px 18px;text-decoration:none;font-weight:800">${escapeHtml(buttonLabel)}</a></p><div style="margin-top:28px;border-top:1px solid #b7b0a1;padding-top:16px;color:#716c63;font-size:11px;line-height:1.5">This is a security email from The Good Press. If you did not request it, you can safely ignore it.<br>Sent by <a href="mailto:readit@goodpress.au" style="color:#716c63">readit@goodpress.au</a></div></td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html><body style="margin:0;background:#ded8c9;color:#1d1d1b;font-family:Arial,sans-serif"><div style="display:none;max-height:0;overflow:hidden">${escapeHtml(preheader)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ded8c9;padding:24px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#f4eddd;border:1px solid #1d1d1b"><tr><td style="padding:30px"><div style="font:700 11px Arial,sans-serif;letter-spacing:2px;text-transform:uppercase;border-bottom:3px double #1d1d1b;padding-bottom:14px">The Good Press</div><h1 style="font:900 38px/1 Georgia,serif;letter-spacing:-1px;margin:24px 0 16px">${escapeHtml(heading)}</h1><div style="font:17px/1.55 Georgia,serif">${copy}</div><p style="margin:26px 0"><a href="${escapeHtml(buttonUrl)}" style="display:inline-block;background:#1d1d1b;color:#f4eddd;padding:14px 18px;text-decoration:none;font-weight:800">${escapeHtml(buttonLabel)}</a></p><div style="margin-top:28px;border-top:1px solid #b7b0a1;padding-top:16px;color:#716c63;font-size:11px;line-height:1.5">This is an automated security email from no-reply@goodpress.au. If you did not request it, you can safely ignore it.<br>Need help? <a href="mailto:support@goodpress.au" style="color:#716c63">support@goodpress.au</a></div></td></tr></table></td></tr></table></body></html>`;
 }
 

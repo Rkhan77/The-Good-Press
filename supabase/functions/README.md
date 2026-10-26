@@ -37,13 +37,13 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 # Consent-based email notifications
 
-The notification system sends through Resend using `readit@goodpress.au`. Readers start opted out and must enable either notification in Settings.
+The notification system sends through Resend using `no-reply@goodpress.au`, with replies directed to `support@goodpress.au`. Readers start opted out and must enable either notification in Settings.
 
 Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional new-article and card-refresh preferences and is protected by a per-user idempotency key.
 
 ## Authentication emails through Resend
 
-`send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through the Resend Email API from `readit@goodpress.au` within one minute.
+`send_auth_email_hook` is the Supabase Postgres Send Email Auth Hook. It places confirmation, password recovery, invitation, magic-link, reauthentication, and email-change messages into the protected delivery queue. The worker sends them through the Resend Email API from `no-reply@goodpress.au` within one minute.
 
 ## 1. Deploy the schema
 
@@ -54,8 +54,9 @@ Deploy `supabase/migrations/20261024000000_email_notifications.sql`. It adds rea
 Add and verify `goodpress.au` in Resend first. Add every DNS record Resend provides, wait for the domain status to become **Verified**, then create a sending API key. Store these Edge Function secrets in Supabase:
 
 - `RESEND_API_KEY`
-- `MAIL_FROM=readit@goodpress.au`
+- `MAIL_FROM=no-reply@goodpress.au`
 - `MAIL_FROM_NAME=The Good Press`
+- `MAIL_REPLY_TO=support@goodpress.au`
 - `APP_URL=https://goodpress.au`
 
 Leave `NOTIFICATIONS_LIVE` unset or set to `false` during initial testing. Never put the Resend API key in the website. The Microsoft 365 mailbox can remain active for receiving replies; Resend handles outbound delivery.
@@ -65,7 +66,7 @@ Leave `NOTIFICATIONS_LIVE` unset or set to `false` during initial testing. Never
 Deploy `send-email-test`, `queue-notifications`, `notification-worker`, and `unsubscribe`. Invoke `send-email-test` from a trusted server request with the Supabase service-role key in the `Authorization: Bearer ...` header. Its optional JSON body is:
 
 ```json
-{ "to": "readit@goodpress.au" }
+{ "to": "contact@goodpress.au" }
 ```
 
 The test sends one private message and does not contact readers. Confirm that the message arrives from The Good Press before enabling delivery.

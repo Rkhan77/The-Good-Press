@@ -1,4 +1,4 @@
--- Route Supabase authentication mail through the existing Microsoft Graph
+-- Route Supabase authentication mail through the protected delivery queue.
 -- worker. This avoids password-based SMTP and keeps auth tokens server-side.
 
 alter table public.notification_outbox

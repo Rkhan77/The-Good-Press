@@ -12,7 +12,7 @@ Deno.serve(async (request) => {
     if (!data) return page('That link has expired.', 'No notification preferences were changed.', 404);
     return page('You’re unsubscribed.', 'The newsroom will keep the email bell quiet. You can opt in again from Settings at any time.');
   } catch {
-    return page('We could not update that preference.', 'Please try again or email readit@goodpress.au.', 500);
+    return page('We could not update that preference.', 'Please try again or email support@goodpress.au.', 500);
   }
 });
 

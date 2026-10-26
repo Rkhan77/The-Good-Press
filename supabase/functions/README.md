@@ -37,9 +37,9 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 # Consent-based email notifications
 
-The notification system sends through Resend using `no-reply@goodpress.au`, with replies directed to `support@goodpress.au`. Readers start opted out and must enable either notification in Settings.
+The notification system sends through Resend using `no-reply@goodpress.au`, with replies directed to `support@goodpress.au`. Readers start opted out and choose the notifications relevant to their edition in Settings.
 
-Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional new-article and card-refresh preferences and is protected by a per-user idempotency key.
+Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional digest and unread-reminder preferences and is protected by a per-user idempotency key.
 
 ## Authentication emails through Resend
 
@@ -47,7 +47,7 @@ Every verified new account receives one service welcome email. Email/password re
 
 ## 1. Deploy the schema
 
-Deploy `supabase/migrations/20261024000000_email_notifications.sql`. It adds reader preferences, a protected delivery queue, delivery records, unsubscribe tokens, and the 24-hour card-refresh queue hook.
+Deploy the email migrations through `20261026000000_segmented_notification_schedule.sql`. They add reader preferences, a protected delivery queue, delivery records, unsubscribe tokens, the 24-hour card-refresh queue hook, the subscriber daily digest, and twice-weekly unread reminders.
 
 ## 2. Configure Resend
 
@@ -71,22 +71,16 @@ Deploy `send-email-test`, `queue-notifications`, `notification-worker`, and `uns
 
 The test sends one private message and does not contact readers. Confirm that the message arrives from The Good Press before enabling delivery.
 
-## 4. Connect the article workflow
+## 4. Notification schedule
 
-New articles are now connected automatically. When n8n inserts an article with `status = 'published'`, Supabase adds it to a ten-minute digest for every reader who opted into new-article emails. Articles inserted together are combined into one email, so n8n does not need another HTTP node.
+`20261026000000_segmented_notification_schedule.sql` replaces immediate article alerts with three plan-aware schedules:
 
-For a manual or recovery batch, make one POST request to:
+- Unlimited subscribers can opt into one digest at 12:00 PM Australia/Perth time. It reports how many new and unread stories are available.
+- Free signed-in readers can opt into one digest when their 25-card allowance resets. It includes the number of unread stories then available.
+- Either plan can opt into unread reminders at 12:00 PM each Tuesday and Friday. No reminder is queued when the reader has nothing unread.
 
-`https://ltdzjanqhxrleqbtkpoo.supabase.co/functions/v1/queue-notifications`
-
-Use the service-role key as both a Bearer token and `apikey`, and send only the inserted article IDs:
-
-```json
-{ "article_ids": [351, 352, 353] }
-```
-
-The queue is idempotent: submitting the same batch twice does not produce duplicate reader emails.
+The worker randomly rotates three daily-edition messages and three unread-reminder messages. Emails do not list categories or story titles. Every notification shows the unread count in the newspaper masthead and uses a `Read more` call to action.
 
 ## 5. Schedule the worker and go live
 
-`20261025000000_automate_email_notifications.sql` schedules `notification-worker` every five minutes using a private key generated inside Supabase Vault. Once the private test succeeds, set `NOTIFICATIONS_LIVE=true`. The worker rechecks consent before every send, provides a one-click unsubscribe link, retries temporary failures, and records the outcome.
+`20261025000000_automate_email_notifications.sql` schedules `notification-worker` every five minutes using a private key generated inside Supabase Vault. `20261026000000_segmented_notification_schedule.sql` adds the noon queues. Once the private test succeeds, set `NOTIFICATIONS_LIVE=true`. The worker rechecks consent and plan eligibility before every send, provides a one-click unsubscribe link, retries temporary failures, and records the outcome.

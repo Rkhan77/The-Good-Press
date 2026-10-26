@@ -1,12 +1,33 @@
-import { adminClient, authEmailFrame, emailFrame, environment, escapeHtml, json, requireServiceRequest, sendMail } from '../_shared/email.ts';
+import { adminClient, authEmailFrame, emailFrame, environment, json, requireServiceRequest, sendMail } from '../_shared/email.ts';
 
 type Job = {
   id: number;
-  kind: 'auth' | 'welcome' | 'new_articles' | 'card_reset';
+  kind: 'auth' | 'welcome' | 'new_articles' | 'card_reset' | 'unread_reminder';
   user_id: string;
-  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string };
+  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string; mode?: string; unread_count?: number; new_count?: number };
   attempts: number;
 };
+
+const dailyMessages = [
+  { subject: 'Your daily dose of good things has arrived', heading: 'Good things have been happening.', line: 'The newsroom gathered today’s useful progress into one calmer place.' },
+  { subject: 'Today’s good things are ready', heading: 'The good stuff made the paper.', line: 'A fresh edition is waiting, with less noise and more things worth knowing.' },
+  { subject: 'A fresh dose of progress just landed', heading: 'Something good has been happening.', line: 'The presses have been busy finding constructive stories for your next read.' },
+];
+
+const unreadMessages = [
+  { subject: 'A gentler scroll is waiting', heading: 'Doomscrolling called. We sent it to voicemail.', line: 'Endless bad news will not save the world. A few constructive stories may, however, help your attention recover.' },
+  { subject: 'Your attention deserves better news', heading: 'Your attention span is not a lost cause.', line: 'A short visit to useful progress is kinder than another lap around the outrage carousel.' },
+  { subject: 'There are good things you have not read yet', heading: 'The world will survive one less doomscroll.', line: 'Give your thumbs a healthier assignment and catch up on the good things that have been getting done.' },
+];
+
+function randomMessage<T>(messages: readonly T[]): T {
+  const random = crypto.getRandomValues(new Uint32Array(1))[0];
+  return messages[random % messages.length];
+}
+
+function pluralStories(count: number) {
+  return `${count} ${count === 1 ? 'story' : 'stories'}`;
+}
 
 const authMessages: Record<string, { subject: string; preheader: string; heading: string; copy: string; button: string }> = {
   signup: { subject: 'Confirm your Good Press account', preheader: 'Confirm your email to open your Good Edition.', heading: 'Confirm your place at the newsstand.', copy: '<p>One quick check and your Good Press account will be ready. Confirm this email address to start choosing the locations and stories that matter to you.</p>', button: 'Confirm my email' },
@@ -44,6 +65,12 @@ async function requireWorkerRequest(request: Request) {
   await requireServiceRequest(request);
 }
 
+async function currentUnreadCount(admin: ReturnType<typeof adminClient>, userId: string, fallback = 0) {
+  const { data, error } = await admin.rpc('count_unread_stories', { p_user_id: userId });
+  if (!error && Number.isFinite(Number(data))) return Math.max(0, Math.floor(Number(data)));
+  return Math.max(0, Math.floor(Number(fallback) || 0));
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   try {
@@ -58,12 +85,21 @@ Deno.serve(async (request) => {
     for (const job of (data ?? []) as Job[]) {
       let recipient = '';
       try {
-        const [{ data: preference }, { data: authData }] = await Promise.all([
-          admin.from('notification_preferences').select('new_articles,card_reset,unsubscribed_at,unsubscribe_token').eq('user_id', job.user_id).maybeSingle(),
+        const [{ data: preference }, { data: authData }, { data: subscription }] = await Promise.all([
+          admin.from('notification_preferences').select('new_articles,card_reset,unread_reminders,unsubscribed_at,unsubscribe_token').eq('user_id', job.user_id).maybeSingle(),
           admin.auth.admin.getUserById(job.user_id),
+          admin.from('subscriptions').select('status,current_period_end').eq('user_id', job.user_id).maybeSingle(),
         ]);
         recipient = job.kind === 'auth' ? (job.payload?.recipient ?? '') : (authData.user?.email ?? '');
-        const allowed = job.kind === 'auth' ? Boolean(recipient) : preference && !preference.unsubscribed_at && (job.kind === 'welcome' || (job.kind === 'new_articles' ? preference.new_articles : preference.card_reset));
+        const unlimited = Boolean(subscription && ['active', 'trialing'].includes(subscription.status) && (!subscription.current_period_end || new Date(subscription.current_period_end) > new Date()));
+        const allowed = job.kind === 'auth'
+          ? Boolean(recipient)
+          : Boolean(preference && !preference.unsubscribed_at && (
+            job.kind === 'welcome'
+            || (job.kind === 'new_articles' && unlimited && preference.new_articles)
+            || (job.kind === 'card_reset' && !unlimited && preference.card_reset)
+            || (job.kind === 'unread_reminder' && preference.unread_reminders)
+          ));
         if (!allowed || !recipient) { await complete(admin, job, 'skipped', recipient, 'Reader is not eligible or opted in'); skipped++; continue; }
 
         if (job.kind === 'auth') {
@@ -89,18 +125,52 @@ Deno.serve(async (request) => {
           const since = new Date(Date.now() - 86400000).toISOString();
           const { count } = await admin.from('article_reads').select('article_id', { count: 'exact', head: true }).eq('user_id', job.user_id).gte('created_at', since);
           if ((count ?? 0) >= 25) { await retry(admin, job, 'Card allowance has not reset yet'); continue; }
-          const html = emailFrame('Your next Good Press edition is ready.', 'Twenty-five fresh spaces on the newsstand.', '<p>Your free card allowance has refreshed. The newsroom has swept the floor, sharpened its pencils and opened the doors again.</p>', 'Read your refreshed edition', appUrl, unsubscribeUrl);
-          await sendMail(recipient, 'Your Good Press cards are ready', html);
+          const unreadCount = await currentUnreadCount(admin, job.user_id, job.payload?.unread_count);
+          if (!unreadCount) { await complete(admin, job, 'skipped', recipient, 'No unread stories are available'); skipped++; continue; }
+          const message = randomMessage(dailyMessages);
+          const html = emailFrame(
+            `${pluralStories(unreadCount)} are waiting in your refreshed edition.`,
+            message.heading,
+            `<p>${message.line}</p><p>Your 25-card edition has refreshed, with <strong>${pluralStories(unreadCount)}</strong> waiting to be read.</p>`,
+            'Read more',
+            appUrl,
+            unsubscribeUrl,
+            unreadCount,
+          );
+          await sendMail(recipient, message.subject, html);
+        } else if (job.kind === 'new_articles') {
+          if (!preference) throw new Error('Notification preference record is missing');
+          const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;
+          const unreadCount = await currentUnreadCount(admin, job.user_id, job.payload?.unread_count);
+          const newCount = Math.min(unreadCount, Math.max(0, Math.floor(Number(job.payload?.new_count) || 0)));
+          if (!unreadCount || !newCount) { await complete(admin, job, 'skipped', recipient, 'No unread new stories are available'); skipped++; continue; }
+          const message = randomMessage(dailyMessages);
+          const html = emailFrame(
+            `${pluralStories(newCount)} joined The Good Press today.`,
+            message.heading,
+            `<p>${message.line}</p><p><strong>${pluralStories(newCount)}</strong> arrived today, and your edition has <strong>${pluralStories(unreadCount)}</strong> waiting in total.</p>`,
+            'Read more',
+            appUrl,
+            unsubscribeUrl,
+            unreadCount,
+          );
+          await sendMail(recipient, message.subject, html);
         } else {
           if (!preference) throw new Error('Notification preference record is missing');
           const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;
-          const ids = Array.isArray(job.payload?.article_ids) ? job.payload.article_ids : [];
-          const { data: articles } = await admin.from('articles').select('id,title,category').in('id', ids).eq('status', 'published').order('published_at', { ascending: false }).limit(6);
-          if (!articles?.length) { await complete(admin, job, 'skipped', recipient, 'No published articles remained in this batch'); skipped++; continue; }
-          const list = articles.map(article => `<li style="margin:0 0 10px"><strong>${escapeHtml(article.title)}</strong><br><span style="color:#716c63;font:12px Arial,sans-serif;text-transform:uppercase">${escapeHtml(article.category)}</span></li>`).join('');
-          const extra = ids.length > articles.length ? `<p>And ${ids.length - articles.length} more hopeful update${ids.length - articles.length === 1 ? '' : 's'}.</p>` : '';
-          const html = emailFrame(`${ids.length} new Good Press update${ids.length === 1 ? '' : 's'} just arrived.`, 'Fresh from the good-news desk.', `<p>The newsroom found progress worth knowing:</p><ul style="padding-left:20px">${list}</ul>${extra}`, 'Read the latest edition', appUrl, unsubscribeUrl);
-          await sendMail(recipient, `${ids.length} new Good Press update${ids.length === 1 ? '' : 's'}`, html);
+          const unreadCount = await currentUnreadCount(admin, job.user_id, job.payload?.unread_count);
+          if (!unreadCount) { await complete(admin, job, 'skipped', recipient, 'No unread stories are available'); skipped++; continue; }
+          const message = randomMessage(unreadMessages);
+          const html = emailFrame(
+            `${pluralStories(unreadCount)} are waiting for a calmer scroll.`,
+            message.heading,
+            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>`,
+            'Read more',
+            appUrl,
+            unsubscribeUrl,
+            unreadCount,
+          );
+          await sendMail(recipient, message.subject, html);
         }
 
         await complete(admin, job, 'sent', recipient);

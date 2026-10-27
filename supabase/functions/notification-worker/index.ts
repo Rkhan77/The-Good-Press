@@ -171,10 +171,12 @@ Deno.serve(async (request) => {
           const unreadCount = await currentUnreadCount(admin, job.user_id, job.payload?.unread_count);
           if (!unreadCount) { await complete(admin, job, 'skipped', recipient, 'No unread stories are available'); skipped++; continue; }
           const message = randomMessage(unreadMessages);
+          const headlines = numberedHeadlines(job.payload?.recent_titles);
+          const subscribePrompt = unlimited ? '' : `<div style="margin:24px 0 0;padding:18px;border:1px solid #b7b0a1"><p style="margin:0 0 12px"><strong>Want more of this?</strong><br>Subscribe for unlimited stories and a fresh inspiring digest every day.</p><a href="${escapeHtml(`${appUrl}/?subscribe=1`)}" style="display:inline-block;background:#e74a32;color:#fff;padding:11px 15px;text-decoration:none;font:800 13px Arial,sans-serif">Subscribe</a></div>`;
           const html = emailFrame(
             `${pluralStories(unreadCount)} are waiting for a calmer scroll.`,
             message.heading,
-            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>`,
+            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>${headlines}${subscribePrompt}`,
             'Read more',
             appUrl,
             unsubscribeUrl,

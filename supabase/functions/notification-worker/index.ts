@@ -124,8 +124,10 @@ Deno.serve(async (request) => {
             'Build your Good Edition',
             appUrl,
             unsubscribeUrl,
+            undefined,
+            'welcome@goodpress.au',
           );
-          await sendMail(recipient, 'Welcome to The Good Press', html);
+          await sendMail(recipient, 'Welcome to The Good Press', html, { fromEmail: 'welcome@goodpress.au' });
         } else if (job.kind === 'card_reset') {
           if (!preference) throw new Error('Notification preference record is missing');
           const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;

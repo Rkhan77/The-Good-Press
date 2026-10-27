@@ -39,7 +39,7 @@ Copy the webhook signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test mo
 
 The notification system sends through Resend using `no-reply@goodpress.au`, with replies directed to `support@goodpress.au`. Readers start opted out and choose the notifications relevant to their edition in Settings.
 
-Every verified new account receives one service welcome email. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional digest and unread-reminder preferences and is protected by a per-user idempotency key.
+Every verified new account receives one service welcome email from `welcome@goodpress.au`. Email/password readers receive it only after confirming their email address; Google readers are already verified at account creation and receive only the welcome. Returning users do not receive it again. This is independent of optional digest and unread-reminder preferences and is protected by a per-user idempotency key.
 
 ## Authentication emails through Resend
 

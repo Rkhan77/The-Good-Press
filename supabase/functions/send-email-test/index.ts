@@ -15,7 +15,7 @@ Deno.serve(async (request) => {
       notificationPreview
         ? `<p><strong>This is a private test.</strong> The newsroom gathered today’s useful progress into one calmer place.</p><p>Your sample edition has <strong>${unreadCount} unread stories</strong> waiting. No reader preferences or scheduled notifications were changed.</p>`
         : '<p>This is a private delivery test from The Good Press. Resend, Supabase and <strong>no-reply@goodpress.au</strong> are speaking to one another.</p><p>No reader notifications have been enabled.</p>',
-      notificationPreview ? 'Read more' : 'Open The Good Press',
+      notificationPreview ? 'Login' : 'Open The Good Press',
       appUrl,
       `${appUrl}/privacy.html`,
       notificationPreview ? unreadCount : undefined,

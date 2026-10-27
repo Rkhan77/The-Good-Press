@@ -159,7 +159,7 @@ Deno.serve(async (request) => {
             `${pluralStories(newCount)} joined The Good Press today.`,
             message.heading,
             `<p>${message.line}</p><p><strong>${pluralStories(newCount)}</strong> arrived today, and your edition has <strong>${pluralStories(unreadCount)}</strong> waiting in total.</p>${headlines}`,
-            'Read more',
+            'Login',
             appUrl,
             unsubscribeUrl,
             unreadCount,

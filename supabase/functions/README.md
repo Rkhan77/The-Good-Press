@@ -1,10 +1,10 @@
 # Stripe subscription setup
 
-The Good Press has a $5/month Unlimited plan. The browser never receives a Stripe secret.
+The Good Press has an A$3.99/month Unlimited plan. The browser never receives a Stripe secret.
 
 ## 1. Create the Stripe product
 
-Create an **Unlimited cards** product in Stripe with a recurring monthly price of **AUD 5.00**. Copy its price ID (starts with `price_`).
+Create an **Unlimited cards** product in Stripe with a recurring monthly price of **AUD 3.99**. Copy its price ID (starts with `price_`).
 
 ## 2. Deploy the database migration
 
@@ -75,7 +75,7 @@ The test sends one private message and does not contact readers. Confirm that th
 
 `20261026000000_segmented_notification_schedule.sql` replaces immediate article alerts with three plan-aware schedules:
 
-- Unlimited subscribers can opt into one digest at 12:00 PM Australia/Perth time. It reports how many new and unread stories are available.
+- Unlimited subscribers can opt into one digest at 12:00 PM Australia/Perth time. It reports how many new and unread stories are available and lists the new article titles in numbered order.
 - Free signed-in readers can opt into one digest when their 25-card allowance resets. It includes the number of unread stories then available.
 - Either plan can opt into unread reminders at 12:00 PM each Tuesday and Friday. No reminder is queued when the reader has nothing unread.
 

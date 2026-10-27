@@ -1,10 +1,10 @@
-import { adminClient, authEmailFrame, emailFrame, environment, json, requireServiceRequest, sendMail } from '../_shared/email.ts';
+import { adminClient, authEmailFrame, emailFrame, environment, escapeHtml, json, requireServiceRequest, sendMail } from '../_shared/email.ts';
 
 type Job = {
   id: number;
   kind: 'auth' | 'welcome' | 'new_articles' | 'card_reset' | 'unread_reminder';
   user_id: string;
-  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string; mode?: string; unread_count?: number; new_count?: number };
+  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string; mode?: string; unread_count?: number; new_count?: number; recent_titles?: string[] };
   attempts: number;
 };
 
@@ -27,6 +27,13 @@ function randomMessage<T>(messages: readonly T[]): T {
 
 function pluralStories(count: number) {
   return `${count} ${count === 1 ? 'story' : 'stories'}`;
+}
+
+function numberedHeadlines(titles: unknown) {
+  if (!Array.isArray(titles)) return '';
+  const clean = [...new Set(titles.map(title => String(title ?? '').trim()).filter(Boolean))];
+  if (!clean.length) return '';
+  return `<p style="margin-bottom:8px"><strong>Recently added:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(title => `<li style="margin:0 0 8px">${escapeHtml(title)}</li>`).join('')}</ol>`;
 }
 
 const authMessages: Record<string, { subject: string; preheader: string; heading: string; copy: string; button: string }> = {
@@ -145,10 +152,11 @@ Deno.serve(async (request) => {
           const newCount = Math.min(unreadCount, Math.max(0, Math.floor(Number(job.payload?.new_count) || 0)));
           if (!unreadCount || !newCount) { await complete(admin, job, 'skipped', recipient, 'No unread new stories are available'); skipped++; continue; }
           const message = randomMessage(dailyMessages);
+          const headlines = numberedHeadlines(job.payload?.recent_titles);
           const html = emailFrame(
             `${pluralStories(newCount)} joined The Good Press today.`,
             message.heading,
-            `<p>${message.line}</p><p><strong>${pluralStories(newCount)}</strong> arrived today, and your edition has <strong>${pluralStories(unreadCount)}</strong> waiting in total.</p>`,
+            `<p>${message.line}</p><p><strong>${pluralStories(newCount)}</strong> arrived today, and your edition has <strong>${pluralStories(unreadCount)}</strong> waiting in total.</p>${headlines}`,
             'Read more',
             appUrl,
             unsubscribeUrl,

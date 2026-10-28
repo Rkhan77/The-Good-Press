@@ -42,7 +42,7 @@ function numberedHeadlines(titles: unknown) {
   if (!Array.isArray(titles)) return '';
   const clean = [...new Set(titles.map(title => String(title ?? '').trim()).filter(Boolean))];
   if (!clean.length) return '';
-  return `<p style="margin-bottom:8px"><strong>Recently added:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(title => `<li style="margin:0 0 8px">${escapeHtml(title)}</li>`).join('')}</ol>`;
+  return `<p style="margin-bottom:8px"><strong>Recent updates:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(title => `<li style="margin:0 0 8px">${escapeHtml(title)}</li>`).join('')}</ol>`;
 }
 
 function numberedArticleBriefs(articles: unknown) {
@@ -57,7 +57,7 @@ function numberedArticleBriefs(articles: unknown) {
     return [{ title, brief }];
   });
   if (!clean.length) return '';
-  return `<p style="margin-bottom:8px"><strong>Recently added:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(article => `<li style="margin:0 0 14px"><strong>${escapeHtml(article.title)}</strong>${article.brief ? `<p style="margin:5px 0 0;color:#4f4b45">${escapeHtml(article.brief)}</p>` : ''}</li>`).join('')}</ol>`;
+  return `<p style="margin-bottom:8px"><strong>Recent updates:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(article => `<li style="margin:0 0 14px"><strong>${escapeHtml(article.title)}</strong>${article.brief ? `<p style="margin:5px 0 0;color:#4f4b45">${escapeHtml(article.brief)}</p>` : ''}</li>`).join('')}</ol>`;
 }
 
 const authMessages: Record<string, { subject: string; preheader: string; heading: string; copy: string; button: string }> = {

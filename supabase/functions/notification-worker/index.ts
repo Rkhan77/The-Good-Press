@@ -129,7 +129,7 @@ Deno.serve(async (request) => {
             job.kind === 'welcome'
             || (job.kind === 'new_articles' && unlimited && preference.new_articles)
             || (job.kind === 'card_reset' && !unlimited && preference.card_reset)
-            || (job.kind === 'unread_reminder' && preference.unread_reminders)
+            || (job.kind === 'unread_reminder' && !unlimited && preference.unread_reminders)
           ));
         if (!allowed || !recipient) { await complete(admin, job, 'skipped', recipient, 'Reader is not eligible or opted in'); skipped++; continue; }
 
@@ -155,9 +155,6 @@ Deno.serve(async (request) => {
         } else if (job.kind === 'card_reset') {
           if (!preference) throw new Error('Notification preference record is missing');
           const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;
-          const since = new Date(Date.now() - 86400000).toISOString();
-          const { count } = await admin.from('article_reads').select('article_id', { count: 'exact', head: true }).eq('user_id', job.user_id).gte('created_at', since);
-          if ((count ?? 0) >= 25) { await retry(admin, job, 'Card allowance has not reset yet'); continue; }
           const unreadCount = await currentUnreadCount(admin, job.user_id, job.payload?.unread_count);
           if (!unreadCount) { await complete(admin, job, 'skipped', recipient, 'No unread stories are available'); skipped++; continue; }
           const message = randomMessage(dailyMessages);

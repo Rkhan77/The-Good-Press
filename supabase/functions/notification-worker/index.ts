@@ -29,6 +29,15 @@ function pluralStories(count: number) {
   return `${count} ${count === 1 ? 'story' : 'stories'}`;
 }
 
+function perthEditionDate() {
+  return new Intl.DateTimeFormat('en-AU', {
+    timeZone: 'Australia/Perth',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
+}
+
 function numberedHeadlines(titles: unknown) {
   if (!Array.isArray(titles)) return '';
   const clean = [...new Set(titles.map(title => String(title ?? '').trim()).filter(Boolean))];
@@ -161,7 +170,7 @@ Deno.serve(async (request) => {
             unsubscribeUrl,
             unreadCount,
           );
-          await sendMail(recipient, message.subject, html);
+          await sendMail(recipient, `${message.subject} · ${perthEditionDate()}`, html);
         } else if (job.kind === 'new_articles') {
           if (!preference) throw new Error('Notification preference record is missing');
           const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;
@@ -179,7 +188,7 @@ Deno.serve(async (request) => {
             unsubscribeUrl,
             unreadCount,
           );
-          await sendMail(recipient, message.subject, html);
+          await sendMail(recipient, `${message.subject} · ${perthEditionDate()}`, html);
         } else {
           if (!preference) throw new Error('Notification preference record is missing');
           const unsubscribeUrl = `${projectUrl}/functions/v1/unsubscribe?token=${encodeURIComponent(preference.unsubscribe_token)}`;

@@ -43,7 +43,15 @@ Deno.serve(async (request) => {
       unreadDigestPreview ? unreadDigestSubscribe : '',
       !unreadDigestPreview,
     );
-    const subject = unreadDigestPreview ? '[Test] Your attention deserves better news' : notificationPreview ? '[Test] Your daily dose of good things has arrived' : 'The Good Press email test';
+    const previewTime = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Perth',
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(new Date());
+    const subject = unreadDigestPreview ? `[Test] Your attention deserves better news · ${previewTime}` : notificationPreview ? `[Test] Your daily dose of good things has arrived · ${previewTime}` : `The Good Press email test · ${previewTime}`;
     await sendMail(recipient, subject, html);
     return json({ sent: true, recipient, template: unreadDigestPreview ? 'unread_digest' : notificationPreview ? 'daily_notification' : 'connection' });
   } catch (error) {

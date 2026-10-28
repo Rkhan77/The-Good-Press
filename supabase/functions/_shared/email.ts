@@ -46,6 +46,7 @@ type SendMailOptions = {
   fromEmail?: string;
   fromName?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 };
 
 export async function sendMail(to: string, subject: string, html: string, options: SendMailOptions = {}) {
@@ -62,6 +63,10 @@ export async function sendMail(to: string, subject: string, html: string, option
       reply_to: replyTo,
       subject,
       html,
+      headers: {
+        'X-Entity-Ref-ID': crypto.randomUUID(),
+        ...options.headers,
+      },
     }),
   });
   const responseBody = await response.text();

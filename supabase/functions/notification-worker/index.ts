@@ -162,13 +162,17 @@ Deno.serve(async (request) => {
           if (!unreadCount) { await complete(admin, job, 'skipped', recipient, 'No unread stories are available'); skipped++; continue; }
           const message = randomMessage(dailyMessages);
           const html = emailFrame(
-            `${pluralStories(unreadCount)} are waiting in your refreshed edition.`,
+            `${unreadCount} of 25 cards are unread in your refreshed edition.`,
             message.heading,
-            `<p>${message.line}</p><p>Your 25-card edition has refreshed, with <strong>${pluralStories(unreadCount)}</strong> waiting to be read.</p>`,
+            `<p>${message.line}</p><p>Your 25-card edition has refreshed, with <strong>${unreadCount} of 25 cards unread</strong>.</p>`,
             'Read more',
             appUrl,
             unsubscribeUrl,
             unreadCount,
+            'no-reply@goodpress.au',
+            '',
+            true,
+            `${unreadCount} of 25 unread`,
           );
           await sendMail(recipient, `${message.subject} · ${perthEditionDate()}`, html);
         } else if (job.kind === 'new_articles') {
@@ -197,10 +201,13 @@ Deno.serve(async (request) => {
           const message = randomMessage(unreadMessages);
           const headlines = numberedHeadlines(job.payload?.recent_titles);
           const subscribePrompt = unlimited ? '' : `<div style="margin:24px 0 0;padding:18px;border:1px solid #b7b0a1"><p style="margin:0 0 12px"><strong>Want more of this?</strong><br>Subscribe for unlimited stories and a fresh inspiring digest every day.</p><a href="${escapeHtml(`${appUrl}/?subscribe=1`)}" style="display:inline-block;background:#e74a32;color:#fff;padding:11px 15px;text-decoration:none;font:800 13px Arial,sans-serif">Subscribe</a></div>`;
+          const unreadSummary = unlimited
+            ? `You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.`
+            : `You have <strong>${unreadCount} of 25 cards unread</strong> in your current edition.`;
           const html = emailFrame(
-            `${pluralStories(unreadCount)} are waiting for a calmer scroll.`,
+            unlimited ? `${pluralStories(unreadCount)} are waiting for a calmer scroll.` : `${unreadCount} of 25 cards are unread in your current edition.`,
             message.heading,
-            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>${headlines}`,
+            `<p>${message.line}</p><p>${unreadSummary}</p>${headlines}`,
             'Login',
             appUrl,
             unsubscribeUrl,
@@ -208,6 +215,7 @@ Deno.serve(async (request) => {
             'no-reply@goodpress.au',
             subscribePrompt,
             false,
+            unlimited ? undefined : `${unreadCount} of 25 unread`,
           );
           await sendMail(recipient, message.subject, html);
         }

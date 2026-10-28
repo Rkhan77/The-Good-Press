@@ -25,7 +25,8 @@ Deno.serve(async (request) => {
       { title: 'An education initiative reaches its next milestone', brief: 'The initiative has completed its latest stage, giving students and educators access to additional learning resources.' },
     ];
     const subscriberDigestList = `<p style="margin-bottom:8px"><strong>Recent updates:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${subscriberDigestArticles.map(article => `<li style="margin:0 0 14px"><strong>${article.title}</strong><p style="margin:5px 0 0;color:#4f4b45">${article.brief}</p></li>`).join('')}</ol>`;
-    const unreadDigestCopy = `<p>Doomscrolling called. We sent it to voicemail.</p><p>You have <strong>${unreadCount} unread stories</strong> waiting in The Good Press.</p><p style="margin-bottom:8px"><strong>Recent updates:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${sampleTitles.map(title => `<li style="margin:0 0 8px">${title}</li>`).join('')}</ol>`;
+    const signedInUnreadCount = Math.min(25, unreadCount);
+    const unreadDigestCopy = `<p>Doomscrolling called. We sent it to voicemail.</p><p>You have <strong>${signedInUnreadCount} of 25 cards unread</strong> in your current edition.</p><p style="margin-bottom:8px"><strong>Recent updates:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${sampleTitles.map(title => `<li style="margin:0 0 8px">${title}</li>`).join('')}</ol>`;
     const unreadDigestSubscribe = `<div style="margin:0 0 24px;padding:18px;border:1px solid #b7b0a1"><p style="margin:0 0 12px"><strong>Want more of this?</strong><br>Subscribe for unlimited stories and a fresh inspiring digest every day.</p><a href="${appUrl}/?subscribe=1" style="display:inline-block;background:#e74a32;color:#fff;padding:11px 15px;text-decoration:none;font:800 13px Arial,sans-serif">Subscribe</a></div>`;
     const html = emailFrame(
       unreadDigestPreview ? `${unreadCount} stories are waiting for a calmer scroll.` : notificationPreview ? `${unreadCount} stories are waiting in your test edition.` : 'Your Good Press email connection is ready.',
@@ -42,6 +43,7 @@ Deno.serve(async (request) => {
       'no-reply@goodpress.au',
       unreadDigestPreview ? unreadDigestSubscribe : '',
       !unreadDigestPreview,
+      unreadDigestPreview ? `${signedInUnreadCount} of 25 unread` : undefined,
     );
     const previewTime = new Intl.DateTimeFormat('en-AU', {
       timeZone: 'Australia/Perth',

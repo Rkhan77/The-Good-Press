@@ -4,7 +4,7 @@ type Job = {
   id: number;
   kind: 'auth' | 'welcome' | 'new_articles' | 'card_reset' | 'unread_reminder';
   user_id: string;
-  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string; mode?: string; unread_count?: number; new_count?: number; recent_titles?: string[] };
+  payload: { article_ids?: number[]; recipient?: string; action?: string; token_hash?: string; token?: string; redirect_to?: string; mode?: string; unread_count?: number; new_count?: number; recent_titles?: string[]; recent_articles?: Array<{ title?: string; brief?: string }> };
   attempts: number;
 };
 
@@ -34,6 +34,21 @@ function numberedHeadlines(titles: unknown) {
   const clean = [...new Set(titles.map(title => String(title ?? '').trim()).filter(Boolean))];
   if (!clean.length) return '';
   return `<p style="margin-bottom:8px"><strong>Recently added:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(title => `<li style="margin:0 0 8px">${escapeHtml(title)}</li>`).join('')}</ol>`;
+}
+
+function numberedArticleBriefs(articles: unknown) {
+  if (!Array.isArray(articles)) return '';
+  const seen = new Set<string>();
+  const clean = articles.flatMap(article => {
+    if (!article || typeof article !== 'object') return [];
+    const title = String((article as { title?: unknown }).title ?? '').trim();
+    const brief = String((article as { brief?: unknown }).brief ?? '').trim();
+    if (!title || seen.has(title)) return [];
+    seen.add(title);
+    return [{ title, brief }];
+  });
+  if (!clean.length) return '';
+  return `<p style="margin-bottom:8px"><strong>Recently added:</strong></p><ol style="margin:0 0 20px;padding-left:24px">${clean.map(article => `<li style="margin:0 0 14px"><strong>${escapeHtml(article.title)}</strong>${article.brief ? `<p style="margin:5px 0 0;color:#4f4b45">${escapeHtml(article.brief)}</p>` : ''}</li>`).join('')}</ol>`;
 }
 
 const authMessages: Record<string, { subject: string; preheader: string; heading: string; copy: string; button: string }> = {
@@ -154,7 +169,7 @@ Deno.serve(async (request) => {
           const newCount = Math.min(unreadCount, Math.max(0, Math.floor(Number(job.payload?.new_count) || 0)));
           if (!unreadCount || !newCount) { await complete(admin, job, 'skipped', recipient, 'No unread new stories are available'); skipped++; continue; }
           const message = randomMessage(dailyMessages);
-          const headlines = numberedHeadlines(job.payload?.recent_titles);
+          const headlines = numberedArticleBriefs(job.payload?.recent_articles) || numberedHeadlines(job.payload?.recent_titles);
           const html = emailFrame(
             `${pluralStories(newCount)} joined The Good Press today.`,
             message.heading,

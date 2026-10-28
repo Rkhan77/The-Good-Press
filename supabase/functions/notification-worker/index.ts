@@ -176,11 +176,14 @@ Deno.serve(async (request) => {
           const html = emailFrame(
             `${pluralStories(unreadCount)} are waiting for a calmer scroll.`,
             message.heading,
-            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>${headlines}${subscribePrompt}`,
-            'Read more',
+            `<p>${message.line}</p><p>You have <strong>${pluralStories(unreadCount)}</strong> waiting in The Good Press.</p>${headlines}`,
+            'Login',
             appUrl,
             unsubscribeUrl,
             unreadCount,
+            'no-reply@goodpress.au',
+            subscribePrompt,
+            false,
           );
           await sendMail(recipient, message.subject, html);
         }
